@@ -1,0 +1,186 @@
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:r_scan/r_scan.dart';
+import 'dart:io';
+import 'decode_image.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:qr_code_tools/qr_code_tools.dart';
+import 'package:rxdart/rxdart.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: HomePage(),
+      // color: Colors.red,
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  const HomePage({Key key}) : super(key: key);
+
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  File _image;
+
+  final imagePicker = ImagePicker();
+  List _qrCodeList = [];
+  File _qrCodeFile;
+
+  // Criar imagem temporário para depois reconhecer código QR
+  String _qrcodeFile = '';
+  String _data = '';
+  @override
+  void initState() {
+    super.initState();
+    /*String filename = '1559788943.png';
+    Stream.fromFuture(getTemporaryDirectory())
+        .flatMap((tempDir) {
+          File qrCodeFile = File('${tempDir.path}/$filename');
+          bool exists = qrCodeFile.existsSync();
+          Iterable<dynamic> content = qrCodeFile.openRead() as Iterable;
+          if (exists) {
+            return Stream.fromIterable(content);
+          } else {
+            return Stream.fromFuture(rootBundle.load("images/$filename"))
+                .flatMap((bytes) => Stream.fromFuture(qrCodeFile.writeAsBytes(
+                    bytes.buffer.asUint8List(
+                        bytes.offsetInBytes, bytes.lengthInBytes))));
+          }
+        })
+        .flatMap((file) =>
+            Stream.fromFuture(QrCodeToolsPlugin.decodeFrom(file.path)))
+        .listen((data) {
+          setState(() {
+            _data = data;
+          });
+        });*/
+  }
+
+  Future getImage() async {
+    final image = await imagePicker.getImage(source: ImageSource.gallery);
+    /*_image =*/
+    await processImage(await image.readAsBytes());
+    //_image = await getPuzzleImage();
+    _qrCodeFile = await getPuzzleList();
+    //_getPhotoByGallery();
+    try {
+      // var x = await _qrCodeFile.readAsBytes();
+      var result = await RScan.scanImagePath(_qrCodeFile.path);
+      print(result);
+    } catch (e) {
+      print(e);
+    }
+    //_qrCodeList = await decodedQrCodeList(_qrCodeFile);
+    setState(() {
+      _image = _qrCodeFile;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text("Leitor do Robot-Puzzle"),
+          backgroundColor: Colors.blue,
+          centerTitle: true,
+        ),
+        body: Center(
+          child: _image == null
+              ? Text("No Image Selected")
+              : Column(
+                  //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                      Image.file(
+                        _image,
+                        width: 250.0,
+                        height: 250.0,
+                      ),
+                      if (_qrCodeList != null)
+                        //Text('List: ${_qrCodeList.toString()}')
+                        Text('List: $_data')
+                      else
+                        Text('Tire Foto do Puzzle finalizado'),
+                    ]),
+        ),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Colors.blue,
+          onPressed: getImage,
+          child: Icon(Icons.camera_alt),
+        ));
+  }
+
+  /// decode from local file
+  Future decode(String file) async {
+    try {
+      String data = await QrCodeToolsPlugin.decodeFrom(_qrCodeFile.path);
+      setState(() {
+        _data = data;
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  void _getPhotoByGallery() {
+    final _picker = ImagePicker();
+
+    Stream.fromFuture(_picker.getImage(source: ImageSource.gallery))
+        .flatMap((file) {
+      setState(() {
+        _qrcodeFile = file.path;
+      });
+      return Stream.fromFuture(QrCodeToolsPlugin.decodeFrom(file.path));
+    }).listen((data) {
+      setState(() {
+        _data = data;
+      });
+    }).onError((error, stackTrace) {
+      setState(() {
+        _data = '';
+      });
+      print('${error.toString()}');
+    });
+  }
+
+  Future<List> decodedQrCodeList(File decodedQrFile) async {
+    try {
+      List decodedQrListFinal = [];
+      /*List _dataList = decodedQrList;
+      int decodedQrWidth;
+      int lastQrListLenght = 0;
+      bool isWidth = true;
+      int x = 0;
+      while (x < _dataList.length)
+        if (isWidth == true) {
+          decodedQrWidth = _dataList[x];
+          isWidth = false;
+          x += 1;
+        } else {
+          List decodedQr = [];
+
+          for (int i = 0; i < (16 * decodedQrWidth * decodedQrWidth); i++) {
+            decodedQr.add(_dataList[i + x]);
+          }
+          x = x + (16 * decodedQrWidth * decodedQrWidth);*/
+      _getPhotoByGallery();
+
+      decodedQrListFinal.add(_data);
+      //isWidth = true;
+      //}
+      return decodedQrListFinal;
+    } catch (e) {
+      print(e);
+    }
+  }
+}

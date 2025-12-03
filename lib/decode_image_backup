@@ -1,0 +1,303 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart';
+
+var data;
+var imageDecoded;
+var dataOriginal;
+
+List puzzleList = [];
+Future<String> processImage(Uint8List imageList) async {
+  try {
+    imageDecoded = decodeImage(imageList);
+    data = imageDecoded.getBytes();
+    dataOriginal = data;
+    for (var x = 0; x < data.length; x += 4) {
+      // r       g           b
+      // calcular a média do rgb, para saber a sua intensidade
+      int avg = ((data[x + 1] + data[x + 2] + data[x + 3]) / 3).floor();
+      // diferenca na escala de cinzentos
+      int expression = (data[x + 3] - data[x + 1]).abs() +
+          (data[x + 2] - data[x + 1]).abs() +
+          (data[x + 3] - data[x + 2]).abs();
+      if (avg > 52 && expression < 20) {
+        /*data[x] = 255;
+        data[x + 1] = 255;
+        data[x + 2] = 255;*/
+        data[x] = avg;
+      } else {
+        /*data[x] = 0;
+        data[x + 1] = 0;
+        data[x + 2] = 0;*/
+        data[x] = 0;
+      }
+    }
+
+    return data;
+    /*Directory appDocumentsDirectory = await getApplicationDocumentsDirectory();
+    String appDocumentsPath = appDocumentsDirectory.path;
+    return await File(appDocumentsPath + '/processedImage.png').writeAsBytes(
+        encodePng(
+            Image.fromBytes(imageDecoded.width, imageDecoded.height, data)));*/
+  } catch (e) {
+    print(e);
+  }
+}
+
+// Funcao para testar se o código QR é reconhecido na imagem
+// Nao é usado no código final
+Future<File> getPuzzleImage() async {
+  try {
+    int height = imageDecoded.height;
+    int width = imageDecoded.width;
+    List puzzleList = [];
+    int x = 0;
+    int decodedQrPos = 0;
+    int firstPoint;
+    int lastHeight;
+    bool checkLine = false;
+
+    //var origData = imageDecoded.getBytes();
+    for (var x = 0; x < data.length; x += 4) {
+      if (data[x] > 52) {
+        firstPoint = x;
+        checkLine = true;
+        decodedQrPos = 1;
+        while (checkLine) {
+          x += 4;
+          decodedQrPos += 1;
+          if (data[x] < 52) {
+            checkLine = false;
+          }
+        }
+        // aqui copia-se para outra imagem a parte respectiva do código QR
+
+        /* Outro método para percorrer as linhas da lista que contém a imagem binarizada
+        
+        var begin_line = x / (4*width);
+        var begin_column = x % (4*width);
+        i --> 0, decodedQrPos-1 (QRheight)
+        j --> 0, decodedQrPos-1 (QRwidth)
+           pos=(begin_line+i)*width+begin_column+j
+           data[pos*4],data[pos*4+1],data[pos*4+2],data[pos*4+3]
+      
+       
+        */
+
+        var decodedQr = [16 * decodedQrPos * decodedQrPos];
+        if (decodedQrPos > 100) {
+          lastHeight = x;
+          int lastPoint = firstPoint + (decodedQrPos - 1) * 4;
+          for (int h = 0; h < decodedQrPos; h += 1) {
+            for (int k = firstPoint; k <= lastPoint; k += 4) {
+              decodedQr.add(255);
+              if (data[k] > 52) {
+                decodedQr.add(0);
+                decodedQr.add(0);
+                decodedQr.add(0);
+              } else {
+                decodedQr.add(0);
+                decodedQr.add(255);
+                decodedQr.add(0);
+              }
+              /*for (int i = 0; i < 3; i++) {
+                if (data[k+3] > 52) {
+                  decodedQr.add(0);
+                } else {
+                  decodedQr.add(255);
+                }
+              }*/
+            }
+            lastPoint = lastPoint + 4 * imageDecoded.width;
+            firstPoint = firstPoint + 4 * imageDecoded.width;
+          }
+          //Aqui codifica-se a imagem para o código QR ser reconhecido
+
+          Directory appDocumentsDirectory =
+              await getApplicationDocumentsDirectory();
+          String appDocumentsPath = appDocumentsDirectory.path;
+          final File decodedQrFile =
+              await File(appDocumentsPath + '/decodedeQrFile.png').writeAsBytes(
+                  encodePng(
+                      Image.fromBytes(decodedQrPos, decodedQrPos, decodedQr)));
+
+          return decodedQrFile;
+
+          //Copy the file to a application document directory.
+          /*final String fileName = basename(decodedQrFile.path);
+          final File localImage =
+              await decodedQrFile.copy('$appDocumentsPath/$fileName');*/
+
+          /// decode from local file
+
+          /*Stream.fromFuture(decodedQrFile.readAsBytes()).flatMap((file) {
+            String file = decodedQrFile.path;
+            return Stream.fromFuture(QrCodeToolsPlugin.decodeFrom(file));
+          }).listen((data) {
+            _data = data;
+          }).onError((error, stackTrace) {
+            _data = '';
+            print('${error.toString()}');
+          });
+
+          if (_data != null) {
+            puzzleList.add(_data);
+          }*/
+
+          x = lastHeight;
+          //x = data.length;
+          //break;
+        }
+      }
+    }
+
+    /*puzzleList.add(puzzleList);
+    return puzzleList;*/
+  } catch (e) {
+    print(e);
+  }
+}
+
+// Funcao para cortar os vários códigos QR, e enviar informacao
+Future<File> getPuzzleList() async {
+  try {
+    List puzzleList = [];
+    int x = 0;
+    int decodedQrWidth = 0;
+    int firstPoint;
+    int lastHeight;
+    bool checkLine = false;
+    //var origData = imageDecoded.getBytes();
+    File decodedQrFileFinal;
+
+    // Ciclo para reconhecer zonas onde se encontra código QR
+    for (var x = 0; x < data.length; x += 4) {
+      if (data[x] > 52) {
+        firstPoint = x;
+        checkLine = true;
+        decodedQrWidth = 1;
+        while (checkLine) {
+          x += 4;
+          decodedQrWidth += 1;
+          if (data[x] < 52) {
+            checkLine = false;
+          }
+        }
+        // aqui copia-se para outra imagem a parte respectiva do código QR
+
+        /* Outro método para percorrer as linhas da lista que contém a imagem binarizada
+        
+        var begin_line = x / (4*width);
+        var begin_column = x % (4*width);
+        i --> 0, decodedQrPos-1 (QRheight)
+        j --> 0, decodedQrPos-1 (QRwidth)
+           pos=(begin_line+i)*width+begin_column+j
+           data[pos*4],data[pos*4+1],data[pos*4+2],data[pos*4+3]
+      
+       
+        */
+
+        var decodedQr = [16 * decodedQrWidth * decodedQrWidth];
+        if (decodedQrWidth > 50) {
+          lastHeight = x;
+          int lastPoint = firstPoint + (decodedQrWidth - 1) * 4;
+          for (int h = 0; h < decodedQrWidth; h += 1) {
+            for (int k = firstPoint; k <= lastPoint; k += 4) {
+              if (data[k] > 52) {
+                decodedQr.add(255);
+                decodedQr.add(255);
+                decodedQr.add(255);
+                decodedQr.add(255);
+              } else {
+                //gbar
+                decodedQr.add(0);
+                decodedQr.add(0);
+                decodedQr.add(255);
+                decodedQr.add(0);
+              }
+              /*for (int i = 0; i < 3; i++) {
+                if (data[k+3] > 52) {
+                  decodedQr.add(0);
+                } else {
+                  decodedQr.add(255);
+                }
+              }*/
+            }
+            lastPoint = lastPoint + 4 * imageDecoded.width;
+            firstPoint = firstPoint + 4 * imageDecoded.width;
+          }
+
+          Directory appDocumentsDirectory =
+              await getApplicationDocumentsDirectory();
+          String appDocumentsPath = appDocumentsDirectory.path;
+          final File decodedQrFile = await File(
+                  appDocumentsPath + '/decodedeQrFile.png')
+              .writeAsBytes(encodePng(
+                  Image.fromBytes(decodedQrWidth, decodedQrWidth, decodedQr)));
+
+          decodedQrFileFinal = decodedQrFile;
+          // Aqui guarda-se o elemento encontrado numa lista
+          /*puzzleList.add(decodedQrWidth);
+          for (int i = 0; i < (16 * decodedQrWidth * decodedQrWidth); i++) {
+            puzzleList.add(decodedQr);
+          }*/
+
+          //NAO USADO - Copy the file to a application document directory.
+          /*final String fileName = basename(decodedQrFile.path);
+          final File localImage =
+              await decodedQrFile.copy('$appDocumentsPath/$fileName');*/
+
+          /// decode from local file
+
+          /*Stream.fromFuture(decodedQrFile.readAsBytes()).flatMap((file) {
+            String file = decodedQrFile.path;
+            return Stream.fromFuture(QrCodeToolsPlugin.decodeFrom(file));
+          }).listen((data) {
+            _data = data;
+          }).onError((error, stackTrace) {
+            _data = '';
+            print('${error.toString()}');
+          });
+
+          if (_data != null) {
+            puzzleList.add(_data);
+          }*/
+
+          //x = lastHeight;
+          x = data.length;
+          //break;
+        }
+      }
+    }
+
+    //var puzzleList2 = puzzleList;
+    //return puzzleList2;
+
+    return decodedQrFileFinal;
+  } catch (e) {
+    print(e);
+  }
+}
+
+//Aqui codifica-se a imagem para o código QR ser reconhecido
+
+/*Directory appDocumentsDirectory =
+              await getApplicationDocumentsDirectory();
+          String appDocumentsPath = appDocumentsDirectory.path;
+          final File decodedQrFile =
+              await File(appDocumentsPath + '/decodedeQrFile.png').writeAsBytes(
+                  encodePng(
+                      Image.fromBytes(decodedQrPos, decodedQrPos, decodedQr)));*/
+
+Future<File> createQrFile(int decodedQrWidth, List decodedQr) async {
+  Directory appDocumentsDirectory = await getApplicationDocumentsDirectory();
+  String appDocumentsPath = appDocumentsDirectory.path;
+  final File decodedQrFile =
+      await File(appDocumentsPath + '/decodedeQrFile.png').writeAsBytes(
+          encodePng(
+              Image.fromBytes(decodedQrWidth, decodedQrWidth, decodedQr)));
+  return decodedQrFile;
+}

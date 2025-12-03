@@ -1,0 +1,44 @@
+Future<File> getPuzzleImage() async {
+  try {
+    int height = imageDecoded.height;
+    int width = imageDecoded.width;
+    List puzzleList = [];
+    int x = 0;
+    int decodedQrWidth = 0;
+    int firstPos;
+    bool checkLine = false;
+
+    //var origData = imageDecoded.getBytes();
+    for (var x = 0; x < data.length; x += 4) {
+      if (data[x + 2] > 52) {
+        firstPos = x;
+        checkLine = true;
+        decodedQrWidth = 1;
+        while (checkLine) {
+          x += 4;
+          decodedQrWidth += 1;
+          if (data[x + 2] < 52) {
+            checkLine = false;
+          }
+        }
+        // aqui copia-se para outra imagem a parte respectiva do código QR
+        if (decodedQrWidth > 100) {
+          var decodedQr = cutQr(firstPos, decodedQrWidth);
+          //Aqui codifica-se a imagem para o código QR ser reconhecido
+
+          Directory appDocumentsDirectory =
+              await getApplicationDocumentsDirectory();
+          String appDocumentsPath = appDocumentsDirectory.path;
+          final File decodedQrFile = await File(
+                  appDocumentsPath + '/decodedeQrFile.png')
+              .writeAsBytes(encodePng(
+                  Image.fromBytes(decodedQrWidth, decodedQrWidth, decodedQr)));
+
+          return decodedQrFile;
+        }
+      }
+    }
+  } catch (e) {
+    print(e);
+  }
+}
