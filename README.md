@@ -1,16 +1,18 @@
-# gria_paper_code
+# README 
 
-A new Flutter application.
+## Background and Goal
 
-## Getting Started
+This app is the software framework for the Article "Paper-Code-Az: Steps for Assembling a Paper-Code for an Educational Robotic System" with the following Abstract:
 
-This project is a starting point for a Flutter application.
+ABSTRACT:
+"In this article we present the Paper-Code-Az project that aims to implement a tangible programming language platform, in which the code is read by a mobile device camera, to be used by an Arduino robot for elementary school children. A description of the different stages of the project is discussed. In the context of the first phase, a language syntax is proposed, as well as the design of the blocks that constitute the elements of tangible language. Also discussed is the way in which each element of the language has an associated fiduciary label that guarantees its translation so that the program code can be executed by the robot."
 
-A few resources to get you started if this is your first Flutter project:
+Link to article: https://link.springer.com/chapter/10.1007/978-3-030-72654-6_34
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+# Functionality
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+This app reads a QR code with a mobile device and sends it via bluetooth.
+
+# Actual Limitations
+
+This app was not actualized to the most recent SDK.
