@@ -15,5 +15,9 @@ This app reads a QR code with a mobile device and sends it via bluetooth.
 
 ## Actual Limitations
 
-This app was not actualized to the most recent SDK.
+This app was not actualized to the most recent SDK, and is respectively outdated, requiring further development to meet the new standards.
+
+Date: 09.01.2026
+
+
 
