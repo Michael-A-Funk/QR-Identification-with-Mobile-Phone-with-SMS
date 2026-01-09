@@ -11,13 +11,14 @@ Link to article: https://link.springer.com/chapter/10.1007/978-3-030-72654-6_34
 
 ## Functionality
 
-This app reads a QR code with a mobile device and sends it via bluetooth.
+This app reads a QR code with a mobile devices camera and sends the QR Codes information via bluetooth.
 
 ## Actual Limitations
 
 This app was not actualized to the most recent SDK, and is respectively outdated, requiring further development to meet the new standards.
 
 Date: 09.01.2026
+
 
 
 
