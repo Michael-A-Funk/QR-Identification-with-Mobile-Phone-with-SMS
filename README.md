@@ -9,10 +9,11 @@ ABSTRACT:
 
 Link to article: https://link.springer.com/chapter/10.1007/978-3-030-72654-6_34
 
-# Functionality
+## Functionality
 
 This app reads a QR code with a mobile device and sends it via bluetooth.
 
-# Actual Limitations
+## Actual Limitations
 
 This app was not actualized to the most recent SDK.
+
